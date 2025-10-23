@@ -15,7 +15,7 @@ if __name__ == '__main__':
     print("Processed data")
     embeddings = model.encode(data).tolist()
 
-    con.execute("CREATE TEMP table temp_emb (idx INTEGER, emb FLOAT[768])")
+    con.execute("CREATE TEMP table temp_emb (idx INTEGER,m emb FLOAT[768])")
     con.executemany(
         "INSERT INTO temp_emb VALUES (?, ?)",
         [(i, emb) for i, emb in enumerate(embeddings)]
