@@ -1,13 +1,21 @@
-from datasets import load_dataset
+import json
+import os
+
+import duckdb
 
 from src.PaperDataset import PaperDataset
 
-dataset = PaperDataset()
-stream_dataset = load_dataset("jackkuo/arXiv-metadata-oai-snapshot", streaming=True, split="train")
-dataset = stream_dataset.take(1000)
+length = 1000
+dataset = PaperDataset("jackkuo/arXiv-metadata-oai-snapshot", length, split="train", cache_size=length)
+data = []
+for idx in range(dataset.length):
+    data.append(dataset[idx])
 
-print(dataset)
+with open('data.json', "w") as f:
+    f.writelines(json.dumps(data))
 
-print("names: ", dataset.column_names)
-for entry in dataset:
-    print(entry)
+con = duckdb.connect('data.db')
+con.execute("CREATE TABLE IF NOT EXISTS abstracts AS SELECT * FROM read_json_auto('data.json');")
+con.execute("ALTER TABLE abstracts ADD COLUMN embeddings FLOAT[768];")
+con.close()
+os.remove('data.json')
