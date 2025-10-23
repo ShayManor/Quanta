@@ -27,4 +27,5 @@ if __name__ == '__main__':
             WHERE abstracts.rowid = temp_emb.idx
         """)
     con.commit()
+    con.close()
 
