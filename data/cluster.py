@@ -1,4 +1,3 @@
-import threading
 import time
 from multiprocessing import Pool
 from typing import List, Optional
