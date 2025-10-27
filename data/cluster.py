@@ -24,7 +24,8 @@ def get_avg(embs):
     # if len(embs) > 100:
     #     embs = np.random.choice(embs, size=100, replace=False)
 
-    return np.mean(embs, axis=0)[0].tolist()
+    # return np.mean(embs, axis=0)[0].tolist()
+    return list(embs[0])[0]  # Dummy for testing
 
 
 def cluster(location: Optional[List[int]], db_path, max_cluster_size=10, min_cluster_size=1, level=0):
@@ -45,8 +46,8 @@ def cluster(location: Optional[List[int]], db_path, max_cluster_size=10, min_clu
 
     cluster_size = len(embeddings)
 
-    print(location)
-    print(f"Cluster size: {cluster_size}")
+    # print(location)
+    # print(f"Cluster size: {cluster_size}")
     if cluster_size < min_cluster_size:
         # Too small cluster - drop
         return
@@ -76,6 +77,7 @@ def cluster(location: Optional[List[int]], db_path, max_cluster_size=10, min_clu
 
         con.execute("INSERT INTO tree VALUES (?, ?);", [get_avg(current_cluster), current_path])
         cluster(current_path, db_path, max_cluster_size, min_cluster_size, level + 1)
+    print(f"Finished level {level}")
     con.commit()
 
 def main(n_procs):
@@ -84,11 +86,14 @@ def main(n_procs):
     min_cluster_size = 1
 
     con = duckdb.connect("data.db")
+    con.execute(f"PRAGMA threads={int(n_procs)};")
+
     con.execute("UPDATE abstracts SET path = NULL")
 
     con.execute(
         "CREATE TABLE IF NOT EXISTS tree (embeddings FLOAT[768],location INTEGER[])"
     )
+
     con.execute("DELETE FROM tree WHERE TRUE")
     with Pool(processes=n_procs) as pool:
         cluster(None, "data.db", level=0)
@@ -96,13 +101,4 @@ def main(n_procs):
     return time.time() - start_time
 
 if __name__ == "__main__":
-    n_procs_options = [1, 2, 3, 5, 10, 15, 20]
-    res = []
-    for n_proc in n_procs_options:
-        res.append(main(n_proc))
-
-    plt.plot(n_procs_options, res)
-    plt.xlabel("Number of processes")
-    plt.ylabel("Time to complete")
-
-    plt.show()
+    main(5)
